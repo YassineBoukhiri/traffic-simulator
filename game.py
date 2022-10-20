@@ -69,8 +69,12 @@ class Car(pygame.sprite.Sprite):
             self.rect.center = (self.x, self.y)
 
         self.surf.fill((get_random_int(0,255),get_random_int(0,255),get_random_int(0,255)))
+        self.initial_speed = speed
         self.speed = speed
+        self.is_blocked = False
         self.speed_game = self.speed * 5 / 200
+
+
 
 
         self.id = Car.id
@@ -78,16 +82,25 @@ class Car(pygame.sprite.Sprite):
         Car.cars.append(self)
         
     def update(self, key):
-        if (self.get_nearest_car_ahead() and self.speed > self.get_nearest_car_ahead().speed):
+        pygame.font.init()
+        myfont = pygame.font.SysFont('Comic Sans MS', 30)
+        font2 = pygame.font.SysFont('Comic Sans MS', 15)
+        car_ahead = self.get_nearest_car_ahead()
+        if (car_ahead and self.speed > car_ahead.speed):
+            self.update_speed(car_ahead.speed)
             speed = self.get_nearest_car_ahead().speed_game
             self.surf.fill((255, 0, 0))
+            self.surf.blit(myfont.render(str(self.get_nearest_car_ahead().id), True, (0, 0, 0)), (20, 20))
             ##write in surface
-            pygame.font.init()
-            myfont = pygame.font.SysFont('Comic Sans MS', 30)
-            self.surf.blit(myfont.render(str(self.id), True, (0, 0, 0)), (0, 0))
+
         else :
             speed = self.speed_game
+            self.update_speed(self.initial_speed)
             self.surf.fill((0, 255, 0))
+        speed /= 2
+        self.surf.blit(myfont.render(str(self.id), True, (0, 0, 0)), (0, 0))
+        self.surf.blit(font2.render(str(self.speed), True, (0, 0, 0)), (0, 40))
+        self.surf.blit(myfont.render("y :"+str(self.y), True, (0, 0, 0)), (0, 60))
         if key == K_UP:
             self.rect.move_ip(0, -speed)
         if key == K_DOWN:
@@ -104,6 +117,7 @@ class Car(pygame.sprite.Sprite):
             self.rect.top = 0
         if self.rect.bottom >= SCREEN_HEIGHT:
             self.rect.bottom = SCREEN_HEIGHT'''
+        self.y = self.rect.center[1]
     def get_nearest_car_ahead(self):
         cars_ahead = []
         for car in Car.cars:
@@ -112,6 +126,14 @@ class Car(pygame.sprite.Sprite):
         #print(cars_ahead)
         if(cars_ahead):
             return max(cars_ahead, key=lambda x: x.y)
+            #return min(cars_ahead, key=lambda x: x.y)
+    def update_speed(self, speed):
+        if not(self.is_blocked):
+            self.speed = speed
+        else:
+            self.speed = self.initial_speed
+        self.speed_game = self.speed * 5 / 200
+        self.is_blocked = not(self.is_blocked)
 
 def get_random_int(x,y):
     return random.randint(x,y)
@@ -168,4 +190,3 @@ while running:
     #screen.blit(player.surf, player.rect)
 
     pygame.display.flip()
-
