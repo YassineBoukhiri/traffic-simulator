@@ -92,17 +92,15 @@ class Car(pygame.sprite.Sprite):
         font2 = pygame.font.SysFont('Comic Sans MS', 15)
         car_ahead = self.get_nearest_car_ahead()
         if (car_ahead and self.speed > car_ahead.speed):
-            self.speed = car_ahead.speed
-            speed = self.get_nearest_car_ahead().speed_game
+            self.update_speed(car_ahead.speed)
             self.surf.fill((255, 0, 0))
             self.surf.blit(myfont.render(str(self.get_nearest_car_ahead().id), True, (0, 0, 0)), (20, 20))
-            ##write in surface
 
         else :
-            speed = self.speed_game
+            speed = self.update_speed(self.initial_speed)
             #self.update_speed(self.initial_speed)
-            self.speed = self.initial_speed
             self.surf.fill((0, 255, 0))
+        speed = self.speed_game
         self.surf.blit(myfont.render(str(self.id), True, (0, 0, 0)), (0, 0))
         self.surf.blit(font2.render("actual:"+str(self.speed), True, (0, 0, 0)), (0, 30))
         self.surf.blit(font2.render("initial:"+str(self.initial_speed), True, (0, 0, 0)), (0, 40))
@@ -122,19 +120,20 @@ class Car(pygame.sprite.Sprite):
             self.rect.bottom = SCREEN_HEIGHT'''
         self.y = self.rect.center[1]
     def get_nearest_car_ahead(self):
-        if Car.cars_lane[self.lane] and Car.cars_lane[self.lane][-1] != self:
-            return Car.cars_lane[self.lane][-1]
-    # def update_speed(self, speed):
-    #     if not(self.is_blocked):
-    #         self.speed = speed
-    #     else:
-    #         self.speed = self.initial_speed
-    #     self.speed_game = self.speed * 5 / 200
-    #     self.is_blocked = not(self.is_blocked)
+        cars_ahead = [car for car in Car.cars_lane[self.lane] if car.y < self.y]
+        if cars_ahead:
+            return max(cars_ahead, key=lambda car: car.y)
+        else:
+            return None
+    def update_speed(self, speed):
+        print("car {} speed updated from {} to {}".format(self.id, self.speed, speed))
+        self.speed = speed
+        self.speed_game = self.speed * 5 / 200
 
     def __del__(self):
         Car.cars.remove(self)
         Car.cars_lane[self.lane].remove(self)
+        print("car {} deleted".format(self.id))
         #self.car_in_back.car_in_front = None
         
 
@@ -182,11 +181,9 @@ while running:
 
     
     for car in Car.cars:
-
         car.update(K_UP)
         screen.blit(car.surf, car.rect)
         if car.rect.bottom <= 0:
-            Car.cars.remove(car)
             del(car)
     
         
