@@ -4,7 +4,8 @@
 import pygame
 from time import sleep
 import random
-import gc
+from datetime import datetime
+import json
 
 pygame.init()
 
@@ -30,6 +31,9 @@ SCREEN_HEIGHT = 600
 # Create the screen object
 # The size is determined by the constant SCREEN_WIDTH and SCREEN_HEIGHT
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+pygame.font.init()
+myfont = pygame.font.SysFont('Comic Sans MS', 30)
+font2 = pygame.font.SysFont('Comic Sans MS', 15)
 
 # Variable to keep the main loop running
 running = True
@@ -50,7 +54,7 @@ class Car(pygame.sprite.Sprite):
     cars = []
     cars_lane = {1: [], 2: [], 3: []}
 
-    def __init__(self, speed, lane=1):
+    def __init__(self, speed, lane=1, y=(SCREEN_HEIGHT)):
         super(Car, self).__init__()
         self.surf = pygame.Surface((75, 100))
         self.surf.fill((255, 255, 255))
@@ -65,13 +69,14 @@ class Car(pygame.sprite.Sprite):
         elif (lane == 3):
             self.x = SCREEN_WIDTH/3/2
             Car.cars_lane[3].append(self)
-
-        self.y = (SCREEN_HEIGHT * 3)//2
+        self.y = y
+        if (Car.cars_lane[self.lane]):
+            self.y = max([car.y for car in Car.cars_lane[self.lane]]) + 200
         self.rect.center = (self.x, self.y)
-        while(any(car.rect.colliderect(self.rect) for car in Car.cars)):
-            self.y = self.y + 20
-            self.rect.center = (self.x, self.y)
-
+        # while(any(car.rect.colliderect(self.rect) for car in Car.cars_lane[self.lane])):
+        #     self.y = self.y + 100
+        #     self.rect.center = (self.x, self.y)
+        self.rect.center = (self.x, self.y)
         self.surf.fill((get_random_int(0,255),get_random_int(0,255),get_random_int(0,255)))
         self.initial_speed = speed
         self.speed = speed
@@ -79,7 +84,11 @@ class Car(pygame.sprite.Sprite):
 
 
 
-
+        self.surf.blit(myfont.render(str(self.id), True, (0, 0, 0)), (20, 20))
+        ahead = self.get_nearest_car_ahead()
+        if ahead:
+            self.surf.blit(font2.render(str(ahead.id), True, (0, 0, 0)), (40, 20))
+        
 
 
         self.id = Car.id
@@ -87,24 +96,18 @@ class Car(pygame.sprite.Sprite):
         Car.cars.append(self)
         
     def update(self, key):
-        pygame.font.init()
-        myfont = pygame.font.SysFont('Comic Sans MS', 30)
-        font2 = pygame.font.SysFont('Comic Sans MS', 15)
         car_ahead = self.get_nearest_car_ahead()
-        if (car_ahead and self.speed > car_ahead.speed):
-            self.update_speed(car_ahead.speed)
-            self.surf.fill((255, 0, 0))
-            self.surf.blit(myfont.render(str(self.get_nearest_car_ahead().id), True, (0, 0, 0)), (20, 20))
-
+        if (car_ahead):
+            if (self.speed > car_ahead.speed and abs(self.y - car_ahead.y) < 150):
+                self.update_speed(car_ahead.speed)
+                self.surf.fill((255, 0, 0))
         else :
             speed = self.update_speed(self.initial_speed)
             #self.update_speed(self.initial_speed)
             self.surf.fill((0, 255, 0))
+        self.surf.blit(font2.render("acl "+str(self.speed), True, (0, 0, 0)), (20, 60))
+        self.surf.blit(font2.render("ini "+str(self.initial_speed), True, (0, 0, 0)), (20, 70))
         speed = self.speed_game
-        self.surf.blit(myfont.render(str(self.id), True, (0, 0, 0)), (0, 0))
-        self.surf.blit(font2.render("actual:"+str(self.speed), True, (0, 0, 0)), (0, 30))
-        self.surf.blit(font2.render("initial:"+str(self.initial_speed), True, (0, 0, 0)), (0, 40))
-        self.surf.blit(myfont.render("y :"+str(self.y), True, (0, 0, 0)), (0, 60))
         if key == K_UP:
             self.rect.move_ip(0, -speed)
         if key == K_DOWN:
@@ -126,14 +129,17 @@ class Car(pygame.sprite.Sprite):
         else:
             return None
     def update_speed(self, speed):
-        print("car {} speed updated from {} to {}".format(self.id, self.speed, speed))
         self.speed = speed
         self.speed_game = self.speed * 5 / 200
-
-    def __del__(self):
+    
+    def remove(self):
         Car.cars.remove(self)
         Car.cars_lane[self.lane].remove(self)
-        print("car {} deleted".format(self.id))
+        print("car {} deleted".format(self.id), "cars left: ", len(Car.cars))
+
+    def __del__(self):
+        print("CALEED   ", self.id)
+
         #self.car_in_back.car_in_front = None
         
 
@@ -142,16 +148,107 @@ def get_random_int(x,y):
 
 def create_cars(n):
     for i in range(n):
-        Car(get_random_int(90,200), get_random_int(1,3))
+        lane = get_random_int(1,3)
+        if (lane == 1):
+            Car(get_random_int(90,120), lane)
+        elif (lane == 2):
+            if (get_random_int(0,1)):
+                Car(get_random_int(90,120), lane)
+            else : 
+                Car(get_random_int(120,132), lane)
+        elif (lane == 3):
+            if (get_random_int(0,1)):
+                Car(get_random_int(120,132), lane)
+            else : 
+                Car(get_random_int(132,150), lane)
+       
 
 
-create_cars(5)
+# create_cars(5)
 
 
 clock=pygame.time.Clock()
 
 # Main loop
 time = 0
+# while running:
+#     # Look at every event in the queue
+#     for event in pygame.event.get():
+#         #screen.blit(player.surf, player.rect)
+#         # Did the user hit a key?
+#         if event.type == KEYDOWN:
+#             # Was it the Escape key? If so, stop the loop.
+#             if event.key == K_ESCAPE:
+#                 running = False
+
+#         # Did the user click the window close button? If so, stop the loop.
+#         elif event.type == QUIT:
+#             running = False
+    
+#     # Drawing the map
+#     screen.fill((0, 0, 0))
+#     surf = pygame.Surface((30, 70))
+#     surf.fill((255, 255, 255))
+#     for i in range(10) : 
+#         screen.blit(surf, (SCREEN_WIDTH/3, i*100))
+#         screen.blit(surf, (SCREEN_WIDTH/3*2, i*100))
+
+#     sleep(0.01)
+#     time += 1
+#     if (time%100 == 0):
+#         create_cars(3)
+
+    
+#     for car in Car.cars:
+#         car.update(K_UP)
+#         screen.blit(car.surf, car.rect)
+#         if car.rect.bottom <= 0:
+#             del(car)
+    
+        
+#     # Flip the display
+#     #screen.blit(player.surf, player.rect)
+
+#     pygame.display.flip()
+#     clock.tick(30)
+{
+  "way 1": {
+    "cars": [{
+      "id": 43,
+      "speed": 75,
+      "lane": 3
+    },
+    {
+      "id": 43,
+      "speed": 75,
+      "lane": 3
+    }]
+  },
+  "timestamp": "2022-16-16717:@1 :39400:00",
+  "camera_id": 122
+}
+
+def get_payload():
+    ts = datetime.now()
+    payload = {
+        "way 1": {
+            "cars": []
+        },
+        "timestamp": ts.strftime("%Y-%m-%d %H:%M:%S"),
+        "camera_id": 122
+    }
+    for car in Car.cars:
+        if 0 < car.rect.bottom < SCREEN_HEIGHT:
+            payload["way 1"]["cars"].append({
+                "id": car.id,
+                "speed": car.speed,
+                "lane": car.lane
+            })
+    return payload
+
+
+
+
 while running:
     # Look at every event in the queue
     for event in pygame.event.get():
@@ -177,14 +274,21 @@ while running:
     sleep(0.01)
     time += 1
     if (time%100 == 0):
-        create_cars(3)
+        create_cars(10)
+    
+    if (time%100 == 0):
+        print(get_payload())
 
     
     for car in Car.cars:
         car.update(K_UP)
         screen.blit(car.surf, car.rect)
         if car.rect.bottom <= 0:
-            del(car)
+            car.remove()
+            #del car
+            print("car deleted XXXXXXXXXXXXXXXXXXXX left: ", len(Car.cars))
+
+    
     
         
     # Flip the display
