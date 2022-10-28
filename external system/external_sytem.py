@@ -249,7 +249,9 @@ def remove_accident_cars():
                 if (car.rect.colliderect(car2.rect)):
                     car.remove()
                     car2.remove()
-                    return True
+    for car in Car.cars:
+        if(not(car.is_over_taking)):
+            car.go_forward()
        
 
 
@@ -280,12 +282,12 @@ def get_payload():
     return payload
 
 Car(150,2)
-#Car(100,2)
-# Car(150,3)
-# Car(120,2)
-# Car(120,3)
-# Car(132,1)
-# Car(132,3)
+Car(100,2)
+Car(150,3)
+Car(120,2)
+Car(120,3)
+Car(132,1)
+Car(132,3)
 
 
 
@@ -321,18 +323,12 @@ while running:
 
     sleep(0.01)
     time += 1
-    # if (time%100 == 0):
-    #     create_cars(3)
+    if (time%100 == 0):
+        create_cars(3)
         
     
-    # if (time%20 == 0):
-    #     for car in Car.cars:
-    #         if (get_random_int(0,1)):
-    #             print("over taking")
-    #             car.over_take()
 
-    for car in Car.cars:
-        car.over_take()
+
 
 
     #if (time%100 == 0):
@@ -343,7 +339,7 @@ while running:
 
 
         if (car.can_over_take()):
-            car.surf.fill((255, 255, 0))
+            car.surf.fill((0, 0, 255))
         
         car.go_forward()
 
