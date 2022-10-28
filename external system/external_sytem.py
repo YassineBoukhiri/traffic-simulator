@@ -1,7 +1,6 @@
 # Simple pygame program
 
 # Import and initialize the pygame library
-from tkinter import font
 import pygame
 from time import sleep
 import random
@@ -80,7 +79,7 @@ class Car(pygame.sprite.Sprite):
             Car.cars_lane[3].append(self)
         self.y = y
         if (Car.cars_lane[self.lane]):
-            self.y = max([car.y for car in Car.cars_lane[self.lane]]) + 100
+            self.y = max([car.y for car in Car.cars_lane[self.lane]]) + 200
         self.rect.center = (self.x, self.y)
         # while(any(car.rect.colliderect(self.rect) for car in Car.cars_lane[self.lane])):
         #     self.y = self.y + 100
@@ -187,6 +186,8 @@ class Car(pygame.sprite.Sprite):
         d = SCREEN_WIDTH/3 / math.cos(math.radians(45))
         for car in Car.cars_lane[self.lane+1]:
             d_car = abs(car.y - self.y) + SCREEN_WIDTH/3 * math.tan(math.radians(45))
+            if (self.speed ==0 or car.speed == 0):
+                return False
             if (d_car / car.speed < d / self.speed):
                 return False
         return True        
@@ -241,6 +242,14 @@ def detect_accident():
                     return True
     return False
 
+def remove_accident_cars():
+    for car in Car.cars:
+        for car2 in Car.cars:
+            if (car != car2):
+                if (car.rect.colliderect(car2.rect)):
+                    car.remove()
+                    car2.remove()
+                    return True
        
 
 
@@ -293,9 +302,14 @@ while running:
             if event.key == K_ESCAPE:
                 running = False
 
+            elif event.key == K_LEFT:
+                remove_accident_cars()
+                
+
         # Did the user click the window close button? If so, stop the loop.
         elif event.type == QUIT:
             running = False
+        
     
     # Drawing the map
     screen.fill((0, 0, 0))
@@ -311,24 +325,24 @@ while running:
         create_cars(3)
         
     
-    if (time%100 == 0):
+    if (time%20 == 0):
         for car in Car.cars:
             if (get_random_int(0,1)):
                 print("over taking")
-                car.update(K_LEFT)
+                car.over_take()
 
     #if (time%100 == 0):
     #    requests.post("http://localhost:8001/traffic", json=get_payload())
 
     
     for car in Car.cars:
-        if (car.id !=0) :
-            car.go_forward()
+
 
         if (car.can_over_take()):
             car.surf.fill((255, 255, 0))
-        if(Car.cars[0].lane!=2):
-            Car.cars[0].over_take()
+        
+        car.go_forward()
+
         # elif car.id == 2:
         #     car.update(K_LEFT)
         screen.blit(car.surf, car.rect)
