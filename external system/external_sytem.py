@@ -146,7 +146,7 @@ class Car(pygame.sprite.Sprite):
         speed = self.speed_game
         print("x", self.x)
         if (self.is_over_taking):
-            print("I am over taking")
+            print("I am ",self.id," over taking and screen width is ", SCREEN_WIDTH//3)
             self.rect.move_ip(-math.sin(math.radians(45))*speed, -math.cos(math.radians(45))*speed)
             self.y = self.rect.center[1]
             self.x = self.rect.center[0]
@@ -160,7 +160,7 @@ class Car(pygame.sprite.Sprite):
                 self.lane = self.lane + 1
                 print(self.lane)
                 Car.cars_lane[self.lane].append(self)
-            d1, d2 = SCREEN_WIDTH//3 *2 + SCREEN_WIDTH//3//2, SCREEN_WIDTH//3 + SCREEN_WIDTH//3//2
+            d1, d2 = SCREEN_WIDTH//3 + SCREEN_WIDTH//3//2,  SCREEN_WIDTH//3//2
             #if (0.95*d1 <= self.x <= 1.05*d1 or 0.95*d2 <= self.x <= 1.05*d2):
             if (0.95*d1<self.x<1.05*d1 or 0.95*d2 < self.x < 1.05*d2 and self.is_half_over_taking_done):
                 print("YYYYYYYYYYYYYYYYYYYYY ENDED OVER TAKING YYYYYYYYYYYYYYYYYYYYY")
@@ -279,8 +279,8 @@ def get_payload():
             })
     return payload
 
-Car(150,1)
-Car(100,2)
+Car(150,2)
+#Car(100,2)
 # Car(150,3)
 # Car(120,2)
 # Car(120,3)
@@ -321,15 +321,19 @@ while running:
 
     sleep(0.01)
     time += 1
-    if (time%100 == 0):
-        create_cars(3)
+    # if (time%100 == 0):
+    #     create_cars(3)
         
     
-    if (time%20 == 0):
-        for car in Car.cars:
-            if (get_random_int(0,1)):
-                print("over taking")
-                car.over_take()
+    # if (time%20 == 0):
+    #     for car in Car.cars:
+    #         if (get_random_int(0,1)):
+    #             print("over taking")
+    #             car.over_take()
+
+    for car in Car.cars:
+        car.over_take()
+
 
     #if (time%100 == 0):
     #    requests.post("http://localhost:8001/traffic", json=get_payload())
